@@ -1,13 +1,14 @@
 import sys
 import shutil
 import os
+import requests
 
 def parse_args(args):
 
 	arg_values = {
 		'recursive': False,
 		'level': 5,  # Default level
-		'save_path': None,
+		'save_path': 'data',
 		'url': None
 	}
 
@@ -50,24 +51,22 @@ def parse_args(args):
 				print("Error: Unexpected argument:", args[i])
 				sys.exit(1)
 			i += 1
+			
+	if arg_values['level'] < 0:
+		print("Depth level is not valid:", arg_values['level'])
+		return
 
 	if arg_values['url'] == None:
 		print("Error: no url specified")
 		sys.exit(1)
 
-	if arg_values['save_path'] == None and not create_or_replace_directory("data"):
+	if not create_or_replace_directory(arg_values['save_path']):
 		sys.exit(1)
-
-	if arg_values['save_path'] == None:
-		arg_values['save_path'] = 'data'
 
 	if not save_path_is_valid(arg_values['save_path']):
 		print("Error: save path is not valid")
 		sys.exit(1)
 
-	if arg_values['level'] < 0:
-		print("Depth level is not valid:", arg_values['level'])
-		return
 
 	return arg_values
 
@@ -94,24 +93,17 @@ def create_or_replace_directory(directory_name):
 		print(f"Error: Failed to create directory '{directory_name}': {e}")
 		return False
 
-def args_are_valid(args):
-	pass
-
 def url_is_valid(url):
-	pass
+	try:
+		response = requests.head(url)
+		return response.status_code == 200
+	except requests.exceptions.RequestException:
+		return False
 
-def depth_level_is_valid(depth_level):
-	pass
 
-def element_is_url(element):
-	pass
-
-def element_is_image(element):
-	pass
-
-def image_has_required_extension(image):
-	pass
+def image_has_required_extension(image_name):
+	acceptable_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']
+	return any(image_name.lower().endswith(ext) for ext in acceptable_extensions)
 
 def save_path_is_valid(path):
-	print("PATH:", path)
 	return os.path.isdir(path) and os.access(path, os.W_OK)
