@@ -3,6 +3,7 @@ import urllib.request
 import re
 import base64
 from datetime import datetime
+import time
 
 def scrape(url, depth_level, save_path):
 
@@ -23,6 +24,7 @@ def scrape(url, depth_level, save_path):
 
 def get_pages_and_images(url):
 	# Fetch HTML content from the URL
+	html_content = ''
 	try:
 		with urllib.request.urlopen(url) as response:
 			html_content = response.read().decode('utf-8')
@@ -46,30 +48,45 @@ def get_pages_and_images(url):
 
 	return pages_and_images
 
+def remove_query(url):
+	# Find the index of the first '?' character
+	query_index = url.find('?')
+
+	# If '?' is found, return the substring before it
+	if query_index != -1:
+		return url[:query_index]
+	# If '?' is not found, return the original URL
+	else:
+		return url
+
 def download_image(url_or_data, save_path):
 	try:
 		# Image is represented by a URL
 		if url_or_data.startswith('http'):
-			image_name = url_or_data.split('/')[-1]
+			url_or_data = remove_query(url_or_data)
+			timestamp = datetime.now().strftime("%Y%m%d_%H%M%S%f")
+			image_name = f'{timestamp}_{url_or_data.split("/")[-1]}'
 
 			# Check if the image has an acceptable extension
-			if image_has_required_extension(image_name):
+			if image_has_required_extension(url_or_data):
 				save_path = os.path.join(save_path, image_name)
-				urllib.request.urlretrieve(url_or_data, save_path)
-				print('Downloading image: ' + image_name)
+				# Set a timeout for URL retrieval (e.g., 10 seconds)
+				print('Downloading image:', image_name)
+				with urllib.request.urlopen(url_or_data, timeout=3) as response:
+					with open(save_path, 'wb') as f:
+						f.write(response.read())
 
 		# Image is represented by base64-encoded data
 		elif url_or_data.startswith('data'):
-			timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+			timestamp = datetime.now().strftime("%Y%m%d_%H%M%S%f")
 			image_name = f"{timestamp}_image.jpg"
 
 			# Check if the image has an acceptable extension
-			if image_has_required_extension(image_name):
+			if image_has_required_extension(url_or_data):
 				image_data = url_or_data.split(",")[1]
 				with open(os.path.join(save_path, image_name), 'wb') as f:
 					f.write(base64.b64decode(image_data))
-					print('Downloading image: ' + image_name)
-
+					print('Downloading image:', image_name)
 
 	except Exception as e:
 		print(f"Error downloading image: {e}")

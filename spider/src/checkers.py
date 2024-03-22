@@ -7,7 +7,7 @@ def parse_args(args):
 
 	arg_values = {
 		'recursive': False,
-		'level': 5,  # Default level
+		'level': 1,  # Default level
 		'save_path': 'data',
 		'url': None
 	}
@@ -21,6 +21,7 @@ def parse_args(args):
 	while i < len(args):
 		if args[i] == '-r':
 			arg_values['recursive'] = True
+			arg_values['level'] = 5
 			i += 1
 		# Checks if -l is being used together with -r
 		elif args[i] == '-l' and arg_values['recursive'] == True:
@@ -96,13 +97,14 @@ def create_or_replace_directory(directory_name):
 def url_is_valid(url):
 	try:
 		response = requests.head(url)
-		return response.status_code == 200
+		return response.status_code == 200 or (response.status_code >= 300 and response.status_code < 400)
 	except requests.exceptions.RequestException:
 		return False
 
 
 def image_has_required_extension(image_name):
 	acceptable_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']
+	
 	return any(image_name.lower().endswith(ext) for ext in acceptable_extensions)
 
 def save_path_is_valid(path):
