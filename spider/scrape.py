@@ -6,13 +6,11 @@ from datetime import datetime
 import time
 
 def scrape(url, depth_level, save_path):
-
-	print('Scraping url: ', url)
-
-	if not url_is_valid(url):
-		return
 	
 	pages_and_images = get_pages_and_images(url)
+
+	#if not url_is_valid(url):
+		#return
 
 	# Recursively scrape urls and download images
 	for element in pages_and_images:
@@ -22,14 +20,36 @@ def scrape(url, depth_level, save_path):
 		if tag_type == 'image':
 			download_image(element_url, save_path)
 
-def get_pages_and_images(url):
-	# Fetch HTML content from the URL
+def get_html_content(url):
 	html_content = ''
+	protocols = ['https://', 'http://']
+
 	try:
-		with urllib.request.urlopen(url) as response:
-			html_content = response.read().decode('utf-8')
+		if url.startswith(('http', 'https')):
+			with urllib.request.urlopen(url) as response:
+				html_content = response.read().decode('utf-8')
+				print('Scraping url: ', url)
+		else:
+			for protocol in protocols:
+				try:
+					with urllib.request.urlopen(protocol + url) as response:
+						html_content = response.read().decode('utf-8')
+						print('Scraping url: ',  protocol + url)
+						break
+				except Exception as e:
+					print(f"An unexpected error occurred: {e}")
 	except Exception as e:
 		print(f"An unexpected error occurred: {e}")
+	
+	return html_content
+
+def get_pages_and_images(url):
+	# Fetch HTML content from the URL
+	html_content = get_html_content(url)
+
+	if html_content == '':
+		print(f'Error: There was an error accessing the link {url}')
+		return []
 
 	# Regular expressions for extracting URLs and images
 	combined_pattern = r"<(?:a\s+(?:[^>]*?\s+)?href=(\"|\')(.*?)\1|img\s+(?:[^>]*?\s+)?src=(\"|\')(.*?)\3)"
@@ -41,8 +61,11 @@ def get_pages_and_images(url):
 	# Create a list to store Pages and image URLs
 	pages_and_images = []
 	for quote1, page, quote2, base64_data in matches:
-		if page.startswith('http'):
+		page = page.strip()
+		if page.startswith(('http', 'https', 'www.')) and page not in pages_and_images:
 			pages_and_images.append(("page", page))
+		elif page.startswith('//www.') and page[2:] not in pages_and_images:
+			pages_and_images.append(("page", page[2:]))
 		elif base64_data and ("image", base64_data) not in pages_and_images:
 			pages_and_images.append(("image", base64_data))
 
@@ -70,8 +93,8 @@ def download_image(url_or_data, save_path):
 			# Check if the image has an acceptable extension
 			if image_has_required_extension(url_or_data):
 				save_path = os.path.join(save_path, image_name)
-				# Set a timeout for URL retrieval (e.g., 10 seconds)
 				print('Downloading image:', image_name)
+				# Set a timeout for URL retrieval
 				with urllib.request.urlopen(url_or_data, timeout=3) as response:
 					with open(save_path, 'wb') as f:
 						f.write(response.read())
@@ -79,10 +102,13 @@ def download_image(url_or_data, save_path):
 		# Image is represented by base64-encoded data
 		elif url_or_data.startswith('data'):
 			timestamp = datetime.now().strftime("%Y%m%d_%H%M%S%f")
-			image_name = f"{timestamp}_image.jpg"
+			extension = extract_extension(url_or_data)
+			image_name = f"{timestamp}_image." + extension
+
+			acceptable_extensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp']
 
 			# Check if the image has an acceptable extension
-			if image_has_required_extension(url_or_data):
+			if extension in acceptable_extensions:
 				image_data = url_or_data.split(",")[1]
 				with open(os.path.join(save_path, image_name), 'wb') as f:
 					f.write(base64.b64decode(image_data))
@@ -90,3 +116,20 @@ def download_image(url_or_data, save_path):
 
 	except Exception as e:
 		print(f"Error downloading image: {e}")
+
+def extract_extension(data_uri):
+	# Split the data URI string using semicolon as delimiter
+	parts = data_uri.split(";")
+
+	# Get the first part of the split string which contains the image type
+	image_type = parts[0].split(":")[-1]
+
+	# Extract just the extension from the image type
+	extension = image_type.split("/")[-1]
+
+	# Check if there's a plus sign in the extension
+	if "+" in extension:
+		# Choose the first word before the + sign
+		extension = extension.split("+")[0]
+
+	return extension

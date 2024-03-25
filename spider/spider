@@ -4,8 +4,6 @@ from checkers import *
 from scrape import *
 import sys
 
-
-
 def main(args):
 
 	args = parse_args(args)
@@ -13,10 +11,6 @@ def main(args):
 	print('URL: ', args['url'])
 	print('Depth Level: ', args['level'])
 	print('Save Path: ', args['save_path'])
-
-	if not url_is_valid(args['url']):
-		print("Error: invalid url")
-		sys.exit(1)
 
 	scrape(args['url'], args['level'], args['save_path'])
 
