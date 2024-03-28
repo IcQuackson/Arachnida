@@ -4,6 +4,7 @@ import sys
 import os
 from checkers import *
 from metadata import *
+from user_interface import *
 
 def parse_args(args):
 
@@ -47,15 +48,16 @@ def main(args):
 
 	files = arg_values['files']
 
-	for file in files:
-		attributes = get_image_attributes(file)
-		print(f'--- File {file} ---')
-		print_metadata(attributes)
-		print()
+	if arg_values['modify']:
+		open_main_menu(files)
+	else:
+		for file in files:
+			attributes = get_image_attributes(file)
+			print(f'--- File {file} ---')
+			print_metadata(attributes)
+			print()
 
-
-
-	changes = {
+	""" 	changes = {
 		306: "2024:03:25 15:30:00",
 		305: "Pillow",
 		65535: "Pillow"
@@ -67,7 +69,7 @@ def main(args):
 	print_metadata(attributes)
 	update_image_exif_data('cat copy.jpg', {}, deletions)
 	attributes = get_image_attributes('cat copy.jpg')
-	print_metadata(attributes)
+	print_metadata(attributes) """
 
 
 if __name__ == '__main__':

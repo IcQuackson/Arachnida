@@ -9,9 +9,6 @@ def scrape(url, depth_level, save_path):
 	
 	pages_and_images = get_pages_and_images(url)
 
-	#if not url_is_valid(url):
-		#return
-
 	# Recursively scrape urls and download images
 	for element in pages_and_images:
 		tag_type, element_url = element
@@ -68,6 +65,11 @@ def get_pages_and_images(url):
 			pages_and_images.append(("page", page[2:]))
 		elif base64_data and ("image", base64_data) not in pages_and_images:
 			pages_and_images.append(("image", base64_data))
+		elif page not in pages_and_images:
+			if url[-1] == '/':
+				url = url[:-1]
+			pages_and_images.append(("page", url + page))
+
 
 	return pages_and_images
 
