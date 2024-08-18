@@ -3,18 +3,33 @@ import urllib.request
 import re
 import base64
 from datetime import datetime
+from bs4 import BeautifulSoup
 import time
 
 def scrape(url, depth_level, save_path):
 	
-	pages_and_images = get_pages_and_images(url)
+	pages_and_images = extract_links_and_images_from_url(url)
+
+	# print extacted links
+	for element in pages_and_images:
+		tag_type, element_url = element
+		print(tag_type, element_url)
+	
+	#print extracted images
+	""" for element in pages_and_images:
+		tag_type, element_url = element
+		if tag_type == 'Image':
+			print(tag_type, element_url) """
+	
+
 
 	# Recursively scrape urls and download images
 	for element in pages_and_images:
 		tag_type, element_url = element
-		if tag_type == 'page' and depth_level > 1:
+		if tag_type == 'Link' and depth_level > 1:
 			scrape(element_url, depth_level - 1, save_path)
-		if tag_type == 'image':
+		if tag_type == 'Image':
+			print(tag_type, element_url)
 			download_image(element_url, save_path)
 
 def get_html_content(url):
@@ -40,38 +55,65 @@ def get_html_content(url):
 	
 	return html_content
 
-def get_pages_and_images(url):
-	# Fetch HTML content from the URL
-	html_content = get_html_content(url)
+def extract_links_and_images_from_url(url):
+	response = requests.get(url)
+	extensions = ('.jpg', '.jpeg', '.png', '.gif', '.bmp')
+	
+	ordered_elements = []
 
-	if html_content == '':
-		print(f'Error: There was an error accessing the link {url}')
-		return []
+	# Check if the request was successful
+	if response.status_code == 200:
+		soup = BeautifulSoup(response.text, 'html.parser')
 
-	# Regular expressions for extracting URLs and images
-	combined_pattern = r"<(?:a\s+(?:[^>]*?\s+)?href=(\"|\')(.*?)\1|img\s+(?:[^>]*?\s+)?src=(\"|\')(.*?)\3)"
+		print('----------------------')
 
-	# Find all matches of both URL and image URL patterns in the HTML content
-	matches = re.findall(combined_pattern, html_content)
+		print(soup.prettify())
 
-	# Filter out empty matches and extract the URL and tag type
-	# Create a list to store Pages and image URLs
-	pages_and_images = []
-	for quote1, page, quote2, base64_data in matches:
-		page = page.strip()
-		if page.startswith(('http', 'https', 'www.')) and page not in pages_and_images:
-			pages_and_images.append(("page", page))
-		elif page.startswith('//www.') and page[2:] not in pages_and_images:
-			pages_and_images.append(("page", page[2:]))
-		elif base64_data and ("image", base64_data) not in pages_and_images:
-			pages_and_images.append(("image", base64_data))
-		elif page not in pages_and_images:
-			if url[-1] == '/':
-				url = url[:-1]
-			pages_and_images.append(("page", url + page))
+		# print all images
+		for element in soup.find_all('img'):
+			print(element)
+		
+		print('----------------------')
 
+		for element in soup.find_all(['a', 'img']):
+			if element.name == 'a' and 'href' in element.attrs:
+				# Check if the link starts with 'http'
+				if element['href'].startswith('http'):
+					ordered_elements.append(('Link', element.attrs['href']))
+				else:
+					ordered_elements.append(('Link', url + element.attrs['href']))
+			# Check if the image's src attribute ends with one of the extensions
+			elif element.name == 'img':
+				src = extract_src(element)
+				print(src)
+				if src and src.lower().endswith(extensions):
+					ordered_elements.append(('Image', src))
+	else:
+		print(f"An error occurred while fetching the URL: {url}")
 
-	return pages_and_images
+	return ordered_elements
+
+def extract_src(element):
+	# Check if the element has a src attribute
+	if 'src' in element.attrs:
+		return element.attrs['src']
+	# Check if the element has a data-src attribute
+	elif 'data-src' in element.attrs:
+		return element.attrs['data-src']
+	# Check if the element has a data-lazy attribute
+	elif 'data-lazy' in element.attrs:
+		return element.attrs['data-lazy']
+	# Check if the element has a data-original attribute
+	elif 'data-original' in element.attrs:
+		return element.attrs['data-original']
+	# Check if the element has a data-hi-res-src attribute
+	elif 'data-hi-res-src' in element.attrs:
+		return element.attrs['data-hi-res-src']
+	# Check if the element has a data-hi-res-src attribute
+	elif 'data-srcset' in element.attrs:
+		return element.attrs['data-srcset']
+	return None
+	
 
 def remove_query(url):
 	# Find the index of the first '?' character
@@ -86,6 +128,7 @@ def remove_query(url):
 
 def download_image(url_or_data, save_path):
 	try:
+		print ('Downloading image:', url_or_data)
 		# Image is represented by a URL
 		if url_or_data.startswith('http'):
 			url_or_data = remove_query(url_or_data)
@@ -95,7 +138,6 @@ def download_image(url_or_data, save_path):
 			# Check if the image has an acceptable extension
 			if image_has_required_extension(url_or_data):
 				save_path = os.path.join(save_path, image_name)
-				print('Downloading image:', image_name)
 				# Set a timeout for URL retrieval
 				with urllib.request.urlopen(url_or_data, timeout=3) as response:
 					with open(save_path, 'wb') as f:
@@ -114,7 +156,6 @@ def download_image(url_or_data, save_path):
 				image_data = url_or_data.split(",")[1]
 				with open(os.path.join(save_path, image_name), 'wb') as f:
 					f.write(base64.b64decode(image_data))
-					print('Downloading image:', image_name)
 
 	except Exception as e:
 		print(f"Error downloading image: {e}")

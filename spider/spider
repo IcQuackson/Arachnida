@@ -3,10 +3,15 @@
 from checkers import *
 from scrape import *
 import sys
+import pdb
+
+#pdb.set_trace()
+
 
 def main(args):
 
 	args = parse_args(args)
+    
 
 	print('URL: ', args['url'])
 	print('Depth Level: ', args['level'])
