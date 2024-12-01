@@ -2,6 +2,19 @@ import sys
 import shutil
 import os
 import requests
+# url
+
+# get url
+
+# pegar nos elementos da pagina
+
+# verificar se é link ou imagem
+
+# se for link, entrar no link e repetir o processo
+
+# se for imagem, fazer download
+
+
 
 def parse_args(args):
 
@@ -96,9 +109,13 @@ def url_is_valid(url):
 
 
 def image_has_required_extension(image_name):
-	acceptable_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']
-	
-	return any(image_name.lower().endswith(ext) for ext in acceptable_extensions)
+	# Get the extension of the image
+	extension = image_name.split('.')[-1]
+	return is_extension_valid(extension)
+
+def is_extension_valid(extension):
+	acceptable_extensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp']
+	return extension.lower() in acceptable_extensions
 
 def save_path_is_valid(path):
 	return os.path.isdir(path) and os.access(path, os.W_OK)
