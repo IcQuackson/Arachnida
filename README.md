@@ -51,11 +51,20 @@
     <li>EXIF data</li>
   </ul>
 
-  <h3>Bonus Features</h3>
-  <ul>
-    <li>Option to modify/delete metadata in the scorpion program.</li>
-    <li>Graphical interface for viewing and managing metadata.</li>
-  </ul>
+  <h2>What is EXIF (Exchangeable image file format)</h2>
+  <p>It's a standard that specifies information added to images and sound used by cameras, scanners and other systems that handle this type of data.</p>
+  <p>It covers a broad spectrum of information such as:</p>
+  <li>Camera Settings</li>
+  <li>Image metrics</li>
+  <li>Date and time information</li>
+  <li>Location information</li>
+  <li>Descriptions</li>
+  <li>Copyright information</li>
+
+  <h2>Why is EXIF relevant?</h2>
+  <p>Since the Exif tag contains metadata about the photo, it can pose a privacy problem.</p>
+  <p>For example users are usually unaware that when a photo is shared it may potentially reveal the exact location and time it was taken and this is all done by default.</p>
+  <p>The privacy problem of Exif data can be avoided by removing the Exif data using a metadata removal tool.</p>
 
   <h2>Implementation Details</h2>
   <p>Both programs must be developed without using wget or scrapy.</p>
