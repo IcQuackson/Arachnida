@@ -2,19 +2,6 @@ import sys
 import shutil
 import os
 import requests
-# url
-
-# get url
-
-# pegar nos elementos da pagina
-
-# verificar se é link ou imagem
-
-# se for link, entrar no link e repetir o processo
-
-# se for imagem, fazer download
-
-
 
 def parse_args(args):
 

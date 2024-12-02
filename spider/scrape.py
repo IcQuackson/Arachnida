@@ -6,25 +6,34 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 import time
 
+visited = set()
+
 def scrape(url, depth_level, save_path):
+
+	print(f"\033[93mScraping {url} at depth level {depth_level}\033[0m")
 	
 	pages_and_images = extract_links_and_images_from_url(url)
-
-	print(f"Scraping {url} at depth level {depth_level}")
 
 	# Recursively scrape urls and download images
 	for element in pages_and_images:
 		tag_type, element_url = element
-		if tag_type == 'Link' and depth_level > 1:
+		if tag_type == 'Link' and depth_level > 1 and element_url not in visited:
+			visited.add(element_url)
 			scrape(element_url, depth_level - 1, save_path)
 		if tag_type == 'Image':
 			download_image(element_url, save_path)
 	
-	print(f"Finished scraping {url}")
+	# print in yellow
+	print(f"\033[93mFinished scraping {url}\033[0m")
 
 
 def extract_links_and_images_from_url(url):
-	response = requests.get(url)
+	try:
+		response = requests.get(url)
+	except requests.exceptions.RequestException as e:
+		print(f"An error occurred while fetching the URL: {e}")
+		return []
+
 	extensions = ('.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp')
 	ordered_elements = []
 
@@ -85,9 +94,8 @@ def download_image(img_src, save_path):
 
 			# Check if the image has an acceptable extension
 			if image_has_required_extension(img_src):
-				print ('Downloading image:', image_name)
 				save_path = os.path.join(save_path, image_name)
-				urllib.request.urlretrieve(img_src, save_path)
+				download_image_data_from_url(img_src, save_path)
 
 		# Handle image represented by a Data URI
 		elif img_src.startswith('data'):
@@ -97,11 +105,18 @@ def download_image(img_src, save_path):
 			if is_extension_valid(extension):
 				image_data = img_src.split(",")[1] # Extract the base64-encoded image data
 				with open(os.path.join(save_path, image_name), 'wb') as f:
-					print ('Downloading image:', image_name)
 					f.write(base64.b64decode(image_data))
+					print(f"\033[92mDownloaded image: {image_name}\033[0m")
 
 	except Exception as e:
 		print(f"Error downloading image: {e}")
+
+def download_image_data_from_url(url, save_path):
+	try:
+		urllib.request.urlretrieve(url, save_path)
+		print(f"\033[92mDownloaded image: {url}\033[0m")
+	except Exception as e:
+		print(f"\033[91mError downloading image {url}: {e}\033[0m")
 
 """
 Extracts the extension of an image from a data URI
