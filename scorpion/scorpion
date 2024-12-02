@@ -4,25 +4,17 @@ import sys
 import os
 from checkers import *
 from metadata import *
-from user_interface import *
 
 def parse_args(args):
-
-	#print('Args: ', args)
 
 	if len(args) < 1:
 		print("Error: Usage: ./scorpion FILE1 [FILE2 ...]")
 		sys.exit(1)
 
 	arg_values = {
-		'modify' : False,
 		'files' : []
 	}
 
-	if (args[0] == '--modify' or args[0] == '-m'):
-		arg_values['modify'] = True
-		args = args[1:]
-	
 	arg_values['files'] = args
 
 	if len(arg_values['files']) == 0:
@@ -43,33 +35,13 @@ def main(args):
 
 	arg_values = parse_args(args)
 
-	print('Modify: ', arg_values['modify'])
-	print('Files: ', arg_values['files'])
-
 	files = arg_values['files']
 
-	if arg_values['modify']:
-		open_main_menu(files)
-	else:
-		for file in files:
-			attributes = get_image_attributes(file)
-			print(f'--- File {file} ---')
-			print_metadata(attributes)
-			print()
-
-	""" 	changes = {
-		306: "2024:03:25 15:30:00",
-		305: "Pillow",
-		65535: "Pillow"
-	}
-	deletions = [65535]
-
-	update_image_exif_data('cat copy.jpg', changes, [])
-	attributes = get_image_attributes('cat copy.jpg')
-	print_metadata(attributes)
-	update_image_exif_data('cat copy.jpg', {}, deletions)
-	attributes = get_image_attributes('cat copy.jpg')
-	print_metadata(attributes) """
+	for file in files:
+		attributes = get_image_metadata(file)
+		print(f'--- File {file} ---')
+		print_metadata(attributes)
+		print()
 
 
 if __name__ == '__main__':
