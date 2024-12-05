@@ -23,7 +23,6 @@ def scrape(url, depth_level, save_path):
 		if tag_type == 'Image':
 			download_image(element_url, save_path)
 	
-	# print in yellow
 	print(f"\033[93mFinished scraping {url}\033[0m")
 
 

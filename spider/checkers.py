@@ -12,8 +12,6 @@ def parse_args(args):
 		'url': None
 	}
 
-	print(args)
-
 	if len(args) < 1:
 		raise ValueError("Error: No arguments provided")
 
